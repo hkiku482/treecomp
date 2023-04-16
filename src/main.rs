@@ -7,9 +7,9 @@ use treecomp::{
 };
 mod cmd_args;
 fn main() {
-    let origin = OsArgs::parse().get_paths();
+    let origins = OsArgs::parse().get_paths();
 
-    let mut parents = origin.clone();
+    let mut parents = origins.clone();
     let mut unexplore_entries = Vec::<PathBuf>::new();
 
     loop {

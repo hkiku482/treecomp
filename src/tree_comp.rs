@@ -38,14 +38,14 @@ pub fn count_missing(missing_items: &Vec<Missing>, entry: &PathBuf) -> usize {
 pub fn list_all_entries(paths: &Vec<PathBuf>) -> Vec<PathBuf> {
     let mut all_entries = Vec::<PathBuf>::new();
 
-    for parent_path in paths {
-        match read_dir(parent_path) {
+    for parent in paths {
+        match read_dir(parent) {
             Ok(children) => {
                 for res in children {
                     match res {
                         Ok(child) => {
                             let p = child.path();
-                            let p = match p.strip_prefix(parent_path) {
+                            let p = match p.strip_prefix(parent) {
                                 Ok(v) => v,
                                 Err(_) => TreeCompError::new(TreeCompErrorKind::FatalError).exit(),
                             };
@@ -57,7 +57,13 @@ pub fn list_all_entries(paths: &Vec<PathBuf>) -> Vec<PathBuf> {
                     }
                 }
             }
-            Err(_) => TreeCompError::new(TreeCompErrorKind::FatalError).exit(),
+            Err(_) => {
+                if parent.exists() {
+                    TreeCompError::new(TreeCompErrorKind::FatalError).exit()
+                } else {
+                    TreeCompError::new(TreeCompErrorKind::DirectoryNotFound(parent.clone())).exit();
+                }
+            }
         }
     }
     all_entries
@@ -78,7 +84,13 @@ pub fn has_entry(parent: &PathBuf, entry: &PathBuf) -> bool {
                 }
             }
         }
-        Err(_) => TreeCompError::new(TreeCompErrorKind::FatalError).exit(),
+        Err(_) => {
+            if parent.exists() {
+                TreeCompError::new(TreeCompErrorKind::FatalError).exit()
+            } else {
+                TreeCompError::new(TreeCompErrorKind::DirectoryNotFound(parent.clone())).exit();
+            }
+        }
     }
     false
 }
