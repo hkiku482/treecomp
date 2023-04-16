@@ -12,7 +12,7 @@ impl OsArgs {
         let cmd = Command::new("treecomp")
             .arg(
                 Arg::new(arg_id)
-                    .help("directories that compare")
+                    .help("directory trees to compare")
                     .num_args(2..),
             )
             .get_matches();
