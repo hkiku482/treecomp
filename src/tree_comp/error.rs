@@ -15,6 +15,7 @@ pub struct TreeCompError {
 pub enum TreeCompErrorKind {
     FatalError,
     DirectoryNotFound(PathBuf),
+    PermissionDenied(PathBuf),
 }
 
 impl Default for TreeCompErrorKind {
@@ -51,6 +52,13 @@ impl TreeCompError {
                     None => "directory",
                 };
                 format!("\"{p}\" not found")
+            }
+            TreeCompErrorKind::PermissionDenied(p) => {
+                let p = match p.to_str() {
+                    Some(s) => s,
+                    None => "directory",
+                };
+                format!("\"{p}\" permission denied")
             }
         }
     }
