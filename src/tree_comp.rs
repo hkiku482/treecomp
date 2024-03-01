@@ -37,36 +37,32 @@ pub fn tree_comp(origins: &Vec<PathBuf>, verbose: bool) -> Vec<PathIdentity> {
                     }
                 }
             } else {
-                if verbose {
-                    nf_paths.push(PathIdentity::new(&unknown_item, relative_path.hash))
-                } else {
-                    let last_item = match nf_paths.last() {
-                        Some(item) => match item.path.to_str() {
-                            Some(s) => {
-                                let mut s = String::from(s);
-                                s.push(MAIN_SEPARATOR);
-                                s
-                            }
-                            None => {
-                                nf_paths.push(PathIdentity::new(&unknown_item, relative_path.hash));
-                                continue;
-                            }
-                        },
+                let last_item = match nf_paths.last() {
+                    Some(item) => match item.path.to_str() {
+                        Some(s) => {
+                            let mut s = String::from(s);
+                            s.push(MAIN_SEPARATOR);
+                            s
+                        }
                         None => {
                             nf_paths.push(PathIdentity::new(&unknown_item, relative_path.hash));
                             continue;
                         }
-                    };
-                    let target_item = match unknown_item.to_str() {
-                        Some(s) => s,
-                        None => {
-                            nf_paths.push(PathIdentity::new(&unknown_item, relative_path.hash));
-                            continue;
-                        }
-                    };
-                    if !target_item.contains(&last_item) {
+                    },
+                    None => {
                         nf_paths.push(PathIdentity::new(&unknown_item, relative_path.hash));
+                        continue;
                     }
+                };
+                let target_item = match unknown_item.to_str() {
+                    Some(s) => s,
+                    None => {
+                        nf_paths.push(PathIdentity::new(&unknown_item, relative_path.hash));
+                        continue;
+                    }
+                };
+                if !target_item.contains(&last_item) {
+                    nf_paths.push(PathIdentity::new(&unknown_item, relative_path.hash));
                 }
             }
         }

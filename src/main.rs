@@ -15,7 +15,7 @@ fn main() {
         };
         let hash = match path_identity.hash {
             Some(h) => format!("{:x}", h),
-            None => "".to_string(),
+            None => "Directory       ".to_string(),
         };
         if args.is_verbose() {
             println!("- {}: {}", hash, path)

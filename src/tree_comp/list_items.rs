@@ -3,25 +3,38 @@ use super::{
     path_identity::PathIdentity,
 };
 use std::{
-    fs::{read, read_dir},
-    io::ErrorKind,
+    fs::{read_dir, File},
+    io::{BufReader, ErrorKind, Read},
     path::PathBuf,
 };
 use xxhash_rust::xxh3::xxh3_64;
 
+/// Return xxhash value.
+///
+/// ```txt
+/// None : directory
+/// 0    : cannot read
+/// ```
 pub fn get_xxhash(p: &PathBuf, no_read: bool) -> Option<u64> {
     if no_read {
         return None;
     }
     if p.is_file() {
         let hash;
-        match read(p) {
+        match File::open(p) {
             Ok(f) => {
-                hash = xxh3_64(&f.as_slice());
+                let mut reader = BufReader::new(f);
+                let mut buffer = [0u8; 4096];
+                match reader.read(&mut buffer) {
+                    Ok(_) => {
+                        hash = Some(xxh3_64(&buffer));
+                    }
+                    Err(_) => hash = Some(0),
+                };
             }
-            Err(_) => hash = 0,
-        };
-        Some(hash)
+            Err(_) => hash = Some(0),
+        }
+        hash
     } else {
         None
     }
