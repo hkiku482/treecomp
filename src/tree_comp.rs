@@ -1,68 +1,75 @@
+use self::{
+    list_items::{get_xxhash, list_all_relative_paths},
+    path_identity::PathIdentity,
+};
 use std::path::{PathBuf, MAIN_SEPARATOR};
-
-use self::list_items::list_all_relative_paths;
 
 pub mod error;
 mod list_items;
+mod path_identity;
 
-pub fn tree_comp(origins: &Vec<PathBuf>, verbose: bool) -> Vec<PathBuf> {
+pub fn tree_comp(origins: &Vec<PathBuf>, verbose: bool) -> Vec<PathIdentity> {
     let origins = origins.clone();
-    let mut not_found_absolute_paths = Vec::<PathBuf>::new();
+    let mut nf_paths = Vec::<PathIdentity>::new();
 
     // list up all relative paths.
-    let all_relative_paths = list_all_relative_paths(&origins);
+    let all_relative_paths = list_all_relative_paths(&origins, verbose);
 
     // iteration origins and relative paths.
     for origin in origins {
-        for r_path in &all_relative_paths {
-            let target = origin.join(r_path);
-            if !target.exists() {
+        for relative_path in &all_relative_paths {
+            let unknown_item = origin.join(relative_path.path.to_path_buf());
+            if unknown_item.exists() {
+                if unknown_item.is_dir() {
+                    continue;
+                }
                 if verbose {
-                    not_found_absolute_paths.push(target)
+                    let target_hash = get_xxhash(&unknown_item, !verbose);
+                    let target_id = PathIdentity::new(&unknown_item, target_hash);
+                    for relative_path in &all_relative_paths {
+                        let full_path = origin.join(relative_path.path.to_path_buf());
+                        if full_path == unknown_item {
+                            if relative_path.hash != target_hash {
+                                nf_paths.push(target_id);
+                                break;
+                            }
+                        }
+                    }
+                }
+            } else {
+                if verbose {
+                    nf_paths.push(PathIdentity::new(&unknown_item, relative_path.hash))
                 } else {
-                    let last_item = match not_found_absolute_paths.last() {
-                        Some(item) => match item.to_str() {
+                    let last_item = match nf_paths.last() {
+                        Some(item) => match item.path.to_str() {
                             Some(s) => {
                                 let mut s = String::from(s);
                                 s.push(MAIN_SEPARATOR);
                                 s
                             }
                             None => {
-                                not_found_absolute_paths.push(target);
+                                nf_paths.push(PathIdentity::new(&unknown_item, relative_path.hash));
                                 continue;
                             }
                         },
                         None => {
-                            not_found_absolute_paths.push(target);
+                            nf_paths.push(PathIdentity::new(&unknown_item, relative_path.hash));
                             continue;
                         }
                     };
-                    let target_item = match target.to_str() {
+                    let target_item = match unknown_item.to_str() {
                         Some(s) => s,
                         None => {
-                            not_found_absolute_paths.push(target);
+                            nf_paths.push(PathIdentity::new(&unknown_item, relative_path.hash));
                             continue;
                         }
                     };
                     if !target_item.contains(&last_item) {
-                        not_found_absolute_paths.push(target);
+                        nf_paths.push(PathIdentity::new(&unknown_item, relative_path.hash));
                     }
                 }
             }
         }
     }
-
-    return not_found_absolute_paths;
-}
-
-#[cfg(test)]
-mod test {
-    use std::path::PathBuf;
-
-    #[test]
-    fn t() {
-        let p = PathBuf::from("A");
-        let p = p.join("a");
-        println!("{:?}", p)
-    }
+    nf_paths
 }
